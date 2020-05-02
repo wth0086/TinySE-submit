@@ -5,7 +5,7 @@ import java.util.*;
 import org.apache.commons.lang3.tuple.*;
 import edu.hanyang.indexer.ExternalSort;
 
-
+//5월 2일 최종 수정
 public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	Triple triple;
 	int realBlockSize;
@@ -25,7 +25,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		InitBlockSize = nblocks-1; //M-1정렬을 위한 값
 		
 		File file = new File(infile);
-		int file_len = (int) file.length();
+//		int file_len = (int) file.length();
 		
 		DataInputStream InputFile = new DataInputStream(new BufferedInputStream(new FileInputStream(infile),blocksize));
 		firstSort(InputFile,tmpdir,nblocks);
@@ -37,49 +37,11 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		}
 		N_th=0; // 중간 merge값 초기화 시켜줘야지
 		finalMerge(FileName, outfile);
-		//청소 코드 만들기 clean 처럼
 	}
-	
-//	public void firstSort(DataInputStream Input, String tmpdir, int nblocks, int file_len) throws IOException {
-//		for(int j=0; j<file_len/(realBlockSize*nblocks); j++) {
-//			tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
-//			for(int i=0;i<realBlockSize*nblocks/triByte;i++) {
-//				tempArray.add(Triple.of(Input.readInt(), Input.readInt(), Input.readInt()));
-//			}
-//			Collections.sort(tempArray);
-//			File tempfile = File.createTempFile("temp", ".data", new File(tmpdir));
-//			tempfile.deleteOnExit();
-//			FileName.add(tempfile.getAbsolutePath());
-//			DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile)));
-//			for(int i=0; i<tempArray.size(); i++) {
-//				Output.writeInt(tempArray.get(i).getLeft());
-//				Output.writeInt(tempArray.get(i).getMiddle());
-//				Output.writeInt(tempArray.get(i).getRight());
-//				Output.flush();
-//			}
-//		}
-//		tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
-//		for(int i=0;i<file_len%(realBlockSize*nblocks)/triByte; i++) {
-//			tempArray.add(Triple.of(Input.readInt(), Input.readInt(), Input.readInt()));
-//		}
-//		Collections.sort(tempArray);
-//		File tempfile = File.createTempFile("temp", ".data", new File(tmpdir));
-//		tempfile.deleteOnExit();
-//		FileName.add(tempfile.getAbsolutePath());
-//		DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile)));
-//		for(int i=0; i<tempArray.size(); i++) {
-//			Output.writeInt(tempArray.get(i).getLeft());
-//			Output.writeInt(tempArray.get(i).getMiddle());
-//			Output.writeInt(tempArray.get(i).getRight());
-//			Output.flush();
-//		}
-//		
-//	}
 	
 	public void firstSort(DataInputStream Input, String tmpdir, int nblocks) throws IOException { //시작할 때의 QuickSort를 구현 한 것
 		// 주어진 Block size만큼 1Block을 만들고 Block size만큼 묶어서 QuickSort 진행
 		//메모리 뻑 안나게 블록 하나 만들 때 마다 임시파일에 저장하도록 수정해라 -> 수정했다
-		
 		try {
 			while(true) {
 				tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
@@ -90,13 +52,13 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 				File tempfile = File.createTempFile("temp", ".data", new File(tmpdir));
 				tempfile.deleteOnExit();
 				FileName.add(tempfile.getAbsolutePath());
-				DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile)));
+				DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile),realBlockSize));
 				for(int i=0; i<tempArray.size(); i++) {
 					Output.writeInt(tempArray.get(i).getLeft());
 					Output.writeInt(tempArray.get(i).getMiddle());
 					Output.writeInt(tempArray.get(i).getRight());
-					Output.flush();
 				}
+				Output.close();
 				
 			}
 		} catch(EOFException e) {
@@ -104,13 +66,13 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 			File tempfile = File.createTempFile("temp", ".data", new File(tmpdir));
 			tempfile.deleteOnExit();
 			FileName.add(tempfile.getAbsolutePath());
-			DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile)));
+			DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile),realBlockSize));
 			for(int i=0; i<tempArray.size(); i++) {
 				Output.writeInt(tempArray.get(i).getLeft());
 				Output.writeInt(tempArray.get(i).getMiddle());
 				Output.writeInt(tempArray.get(i).getRight());
-				Output.flush();
 			}
+			Output.close();
 		return;
 		}
 	}
@@ -118,25 +80,24 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	public void mergeSort(ArrayList<String> FileName,int blocksize, int nblocks,String tmpdir) throws IOException { //여기서 오류 생기기 쉬우니 체크
 		MiddleArray = new ArrayList<String>();
 		N_th=0;
-//		while(tempArray.size()/InitBlockSize!=0)
 		for(int i=0; i<this.FileName.size()/InitBlockSize;i++) { //tempArray.size를 FileName.size로 변경
 			File tempfile = File.createTempFile("temp", ".data", new File(tmpdir));
 			tempfile.deleteOnExit();
-			DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile)));
+			DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile),realBlockSize));
 			Sorting(FileName,Output,InitBlockSize);
 			MiddleArray.add(tempfile.getAbsolutePath());
 			N_th++;
 		}
 		File tempfile = File.createTempFile("temp", ".data", new File(tmpdir));
 		tempfile.deleteOnExit();
-		DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile)));
+		DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempfile),realBlockSize));
 		Sorting(FileName,Output,this.FileName.size()-InitBlockSize*N_th); //tempArray.size를 FileName.size로 변경
 		MiddleArray.add(tempfile.getAbsolutePath());
 		this.FileName = MiddleArray;
 	}
 	
 	public void finalMerge(ArrayList<String> FileName, String outfile) throws IOException {
-		DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outfile)));
+		DataOutputStream Output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outfile),realBlockSize));
 		Sorting(FileName,Output,FileName.size());
 	}
 	
@@ -148,7 +109,6 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		tempfile.deleteOnExit();
 		
 		return fileName;
-		
 	}
 	
 	public void Sorting(ArrayList<String> firstTempFile,DataOutputStream Output, int BlockNum) throws IOException {
@@ -166,7 +126,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 				Output.writeInt(Tree.get(0).get(0).getLeft().getLeft());
 				Output.writeInt(Tree.get(0).get(0).getLeft().getMiddle());
 				Output.writeInt(Tree.get(0).get(0).getLeft().getRight());
-				Output.flush();
+				Output.close();
 				Tree.get(0).remove(0);
 				checkLoop = false;
 			}else {
@@ -176,7 +136,6 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 					Output.writeInt(Tree.get(floor).get(0).getLeft().getLeft());
 					Output.writeInt(Tree.get(floor).get(0).getLeft().getMiddle());
 					Output.writeInt(Tree.get(floor).get(0).getLeft().getRight());
-					Output.flush();
 				}
 				
 				floor = checkFloor(Tree.get(0).size());
@@ -214,9 +173,6 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 			Tree.get(0).set(TreeKey, Triple.of(Triple.of(Input.get(AbsoluteKey).readInt(), Input.get(AbsoluteKey).readInt(), Input.get(AbsoluteKey).readInt()), TreeKey, AbsoluteKey));
 			return true;
 		}catch(EOFException e) {
-//			int TreeKey = Tree.get(floor).get(0).getMiddle();
-//			Tree.get(0).remove(TreeKey);
-//			ReTree();
 			return false;
 		}
 	}
@@ -287,8 +243,8 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 			Output.write(array.get(i).getLeft());
 			Output.write(array.get(i).getMiddle());
 			Output.write(array.get(i).getRight());
-			Output.flush();
 		}
+		Output.close();
 	}
 	
 	
@@ -319,22 +275,6 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 			i++;
 		}
 		return i+1;
-	}
-	
-	public void clean(String dir) {
-		File file = new File(dir);
-		File[] tmpFiles = file.listFiles();
-		if (tmpFiles != null) {
-			for (int i = 0; i < tmpFiles.length; i++) {
-				if (tmpFiles[i].isFile()) {
-					tmpFiles[i].delete();
-				} else {
-					clean(tmpFiles[i].getAbsolutePath());
-				}
-				tmpFiles[i].delete();
-			}
-//			file.delete();
-		}
 	}
 	
 	@Override
