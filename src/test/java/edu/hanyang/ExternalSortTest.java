@@ -28,10 +28,8 @@ public class ExternalSortTest {
 	public void TestSort() throws IOException {
 //		int blocksize = 1024;
 //		int nblocks = 160;
-//		int blocksize = 8000;
-//		int nblocks = 2000;
-		int blocksize = 1024;
-		int nblocks = 10;
+		int blocksize = 4096;
+		int nblocks = 1000;
 		
 		ClassLoader classLoader = this.getClass().getClassLoader();
 //		File infile = new File(classLoader.getResource("test.data").getFile());
@@ -42,7 +40,9 @@ public class ExternalSortTest {
 		
 		TinySEExternalSort sort = new TinySEExternalSort();
 		long timestamp = System.currentTimeMillis();
-		sort.sort(infile.getAbsolutePath(), outfile, tmpdir, blocksize, nblocks);
+		try {
+			sort.sort(infile.getAbsolutePath(), outfile, tmpdir, blocksize, nblocks);
+		} catch (Exception exc) {exc.printStackTrace();}
 		System.out.println("time duration: " + (System.currentTimeMillis() - timestamp) + " msecs with " + nblocks + " blocks of size " + blocksize + " bytes");
 
 		

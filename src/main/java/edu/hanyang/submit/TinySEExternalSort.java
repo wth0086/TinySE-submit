@@ -13,6 +13,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	int InitBlockSize; //mergeSort 할 때 반복 횟수에 곱해줄 M-1 값
 	int N_th=0; //mergeSort 할 때, 필요한 반복 횟수
 	int K; //최종 merge를 시키기 위한 상수
+	int check_key; //메모리 체크를 위한 상수
 	ArrayList<ArrayList<Triple<Integer,Integer,Integer>>> firstArray = new ArrayList<ArrayList<Triple<Integer,Integer,Integer>>>();
 	ArrayList<String> MiddleArray = new ArrayList<String>();
 	ArrayList<Triple<Integer,Integer,Integer>> tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
@@ -23,12 +24,10 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	public void sort(String infile, String outfile, String tmpdir, int blocksize, int nblocks) throws IOException {
 		realBlockSize = (int) blocksize/triByte*triByte; //테스트 예는 1020
 		InitBlockSize = nblocks-1; //M-1정렬을 위한 값
-		
-		File file = new File(infile);
-//		int file_len = (int) file.length();
-		
+
 		DataInputStream InputFile = new DataInputStream(new BufferedInputStream(new FileInputStream(infile),blocksize));
 		firstSort(InputFile,tmpdir,nblocks);
+		InputFile.close();
 		
 		K = FileName.size();
 		while(K>=nblocks) {
@@ -44,8 +43,10 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		//메모리 뻑 안나게 블록 하나 만들 때 마다 임시파일에 저장하도록 수정해라 -> 수정했다
 		try {
 			while(true) {
-				tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
-				for(int i=0;i<realBlockSize*nblocks/triByte;i++) {
+//				tempArray = new ArrayList<Triple<Integer,Integer,Integer>>(); //이게 메모리 아웃의 원인일 수 있다.
+				tempArray.clear();
+				
+				for(int i=0;i<170500 ;i++) {
 					tempArray.add(Triple.of(Input.readInt(), Input.readInt(), Input.readInt()));
 				}
 				Collections.sort(tempArray);
@@ -170,9 +171,11 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 					key = key/2;
 				}
 			}
+			check_key = AbsoluteKey;
 			Tree.get(0).set(TreeKey, Triple.of(Triple.of(Input.get(AbsoluteKey).readInt(), Input.get(AbsoluteKey).readInt(), Input.get(AbsoluteKey).readInt()), TreeKey, AbsoluteKey));
 			return true;
 		}catch(EOFException e) {
+			Input.get(check_key).close(); //메모리 터지는걸 막기 위해 추가해봄
 			return false;
 		}
 	}
@@ -251,7 +254,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	public ArrayList<DataInputStream> getInput(ArrayList<String> File) throws IOException{
 		ArrayList<DataInputStream> InputFile = new ArrayList<DataInputStream>();
 		for(int i=0; i<File.size();i++) {
-			InputFile.add(new DataInputStream(new BufferedInputStream(new FileInputStream(File.get(i)))));
+			InputFile.add(new DataInputStream(new BufferedInputStream(new FileInputStream(File.get(i)),realBlockSize)));
 		}
 		
 		return InputFile;
