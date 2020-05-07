@@ -2,11 +2,7 @@ package edu.hanyang;
 
 import static org.junit.Assert.*;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -27,7 +23,7 @@ public class ExternalSortTest {
 	@Test
 	public void TestSort() throws IOException {
 //		int blocksize = 1024;
-//		int nblocks = 160;
+//		int nblocks = 20;
 		int blocksize = 4096;
 		int nblocks = 1000;
 		
@@ -40,9 +36,7 @@ public class ExternalSortTest {
 		
 		TinySEExternalSort sort = new TinySEExternalSort();
 		long timestamp = System.currentTimeMillis();
-		try {
 			sort.sort(infile.getAbsolutePath(), outfile, tmpdir, blocksize, nblocks);
-		} catch (Exception exc) {exc.printStackTrace();}
 		System.out.println("time duration: " + (System.currentTimeMillis() - timestamp) + " msecs with " + nblocks + " blocks of size " + blocksize + " bytes");
 
 		
@@ -53,15 +47,26 @@ public class ExternalSortTest {
 
 		assertNotNull(resultInputStream);
 		assertNotNull(answerInputStream);
-
-		for (int i = 0; i < 100000; i++) {
-			assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
-			assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
-			assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+		
+		boolean state = true;
+		try {
+			while(state) {
+				assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+				assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+				assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+			}
+		}catch(EOFException e) {
+			resultInputStream.close();
+			answerInputStream.close();
 		}
+//		for (int i = 0; i < 100000; i++) {
+//			assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+//			assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+//			assertEquals(resultInputStream.readInt(), answerInputStream.readInt());
+//		}
 
-		resultInputStream.close();
-		answerInputStream.close();
+//		resultInputStream.close();
+//		answerInputStream.close();
 	}
 
 	private void clean(String dir) {

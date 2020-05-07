@@ -5,7 +5,7 @@ import java.util.*;
 import org.apache.commons.lang3.tuple.*;
 import edu.hanyang.indexer.ExternalSort;
 
-//5월 2일 최종 수정
+//5월 8일 최종 수정
 public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	Triple triple;
 	int realBlockSize;
@@ -31,6 +31,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		
 		K = FileName.size();
 		while(K>=nblocks) {
+			System.out.println("중간과정 싫행");
 			mergeSort(FileName, blocksize, nblocks, tmpdir);
 			K = FileName.size();
 		}
@@ -46,7 +47,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 //				tempArray = new ArrayList<Triple<Integer,Integer,Integer>>(); //이게 메모리 아웃의 원인일 수 있다.
 				tempArray.clear();
 				
-				for(int i=0;i<170500 ;i++) {
+				for(int i=0;i<170500 ;i++) { //이거 다시 170500 으로 고쳐야 해
 					tempArray.add(Triple.of(Input.readInt(), Input.readInt(), Input.readInt()));
 				}
 				Collections.sort(tempArray);
@@ -127,6 +128,11 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 				Output.writeInt(Tree.get(0).get(0).getLeft().getLeft());
 				Output.writeInt(Tree.get(0).get(0).getLeft().getMiddle());
 				Output.writeInt(Tree.get(0).get(0).getLeft().getRight());
+				while(Input.get(Tree.get(0).get(0).getRight()).available() != 0) {
+					Output.writeInt(Input.get(Tree.get(0).get(0).getRight()).readInt());
+					Output.writeInt(Input.get(Tree.get(0).get(0).getRight()).readInt());
+					Output.writeInt(Input.get(Tree.get(0).get(0).getRight()).readInt());
+				}
 				Output.close();
 				Tree.get(0).remove(0);
 				checkLoop = false;
@@ -297,4 +303,3 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	}
 
 }
-
