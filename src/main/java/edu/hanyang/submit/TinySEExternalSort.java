@@ -31,7 +31,6 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		
 		K = FileName.size();
 		while(K>=nblocks) {
-			System.out.println("중간과정 싫행");
 			mergeSort(FileName, blocksize, nblocks, tmpdir);
 			K = FileName.size();
 		}
