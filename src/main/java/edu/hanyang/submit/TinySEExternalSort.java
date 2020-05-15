@@ -5,7 +5,7 @@ import java.util.*;
 import org.apache.commons.lang3.tuple.*;
 import edu.hanyang.indexer.ExternalSort;
 
-//5월 8일 최종 수정
+//5월 15일 최종 수정
 public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	Triple triple;
 	int realBlockSize;
@@ -14,9 +14,8 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	int N_th=0; //mergeSort 할 때, 필요한 반복 횟수
 	int K; //최종 merge를 시키기 위한 상수
 	int check_key; //메모리 체크를 위한 상수
-	ArrayList<ArrayList<Triple<Integer,Integer,Integer>>> firstArray = new ArrayList<ArrayList<Triple<Integer,Integer,Integer>>>();
 	ArrayList<String> MiddleArray = new ArrayList<String>();
-	ArrayList<Triple<Integer,Integer,Integer>> tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
+ 	ArrayList<Triple<Integer,Integer,Integer>> tempArray = new ArrayList<Triple<Integer,Integer,Integer>>();
 	ArrayList<ArrayList<Triple<Triple<Integer,Integer,Integer>,Integer,Integer>>> Tree = new ArrayList<ArrayList<Triple<Triple<Integer,Integer,Integer>,Integer,Integer>>>();
 	ArrayList<String> FileName = new ArrayList<String>();
 	
@@ -26,6 +25,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		InitBlockSize = nblocks-1; //M-1정렬을 위한 값
 
 		DataInputStream InputFile = new DataInputStream(new BufferedInputStream(new FileInputStream(infile),blocksize));
+		
 		firstSort(InputFile,tmpdir,nblocks);
 		InputFile.close();
 		
@@ -43,10 +43,8 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		//메모리 뻑 안나게 블록 하나 만들 때 마다 임시파일에 저장하도록 수정해라 -> 수정했다
 		try {
 			while(true) {
-//				tempArray = new ArrayList<Triple<Integer,Integer,Integer>>(); //이게 메모리 아웃의 원인일 수 있다.
 				tempArray.clear();
-				
-				for(int i=0;i<170500 ;i++) { //이거 다시 170500 으로 고쳐야 해
+				for(int i=0;i<186500 ;i++) { //이거 다시 170500 으로 고쳐야 해 , 186500까지 통과
 					tempArray.add(Triple.of(Input.readInt(), Input.readInt(), Input.readInt()));
 				}
 				Collections.sort(tempArray);

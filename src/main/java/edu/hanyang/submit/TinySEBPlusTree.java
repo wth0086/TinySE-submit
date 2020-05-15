@@ -1,13 +1,13 @@
 package edu.hanyang.submit;
 
 import edu.hanyang.indexer.BPlusTree;
+import java.io.RandomAccessFile;
 
 public class TinySEBPlusTree implements BPlusTree{
-
+	
 	@Override
 	public void close() {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
