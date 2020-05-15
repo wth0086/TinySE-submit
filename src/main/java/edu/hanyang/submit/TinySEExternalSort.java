@@ -5,7 +5,7 @@ import java.util.*;
 import org.apache.commons.lang3.tuple.*;
 import edu.hanyang.indexer.ExternalSort;
 
-//5월 15일 최종 수정
+//5월 15일 최종 수정2
 public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	Triple triple;
 	int realBlockSize;
@@ -44,7 +44,7 @@ public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 		try {
 			while(true) {
 				tempArray.clear();
-				for(int i=0;i<186500 ;i++) { //이거 다시 170500 으로 고쳐야 해 , 186500까지 통과
+				for(int i=0;i<186300 ;i++) { //이거 다시 170500 으로 고쳐야 해 , 186500까지 통과
 					tempArray.add(Triple.of(Input.readInt(), Input.readInt(), Input.readInt()));
 				}
 				Collections.sort(tempArray);
