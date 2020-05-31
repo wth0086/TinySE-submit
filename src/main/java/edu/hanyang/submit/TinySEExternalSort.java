@@ -3,9 +3,12 @@ package edu.hanyang.submit;
 import java.io.*;
 import java.util.*;
 import org.apache.commons.lang3.tuple.*;
+import org.junit.*;
+
 import edu.hanyang.indexer.ExternalSort;
 
 //5월 15일 최종 수정22
+@Ignore("Delete this line to unit test stage 3")
 public class TinySEExternalSort implements ExternalSort, Comparable<Triple> {
 	Triple triple;
 	int realBlockSize;
