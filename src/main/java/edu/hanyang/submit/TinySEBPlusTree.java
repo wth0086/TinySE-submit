@@ -39,7 +39,7 @@ public class TinySEBPlusTree implements BPlusTree{
 			writeRest();
 			tree.close();
 		}else { //Search 모드
-			
+			tree.close();
 		}
 	}
 	
@@ -70,6 +70,7 @@ public class TinySEBPlusTree implements BPlusTree{
 			if(Root.size()<(blocksize/4)) {//Root가 길이를 안넘었을 때
 				firstRoot(key, address);
 			}else { //Root가 길이를 넘었을 때
+				firstRoot(key,address);
 				firstSplit(key, address);
 			}
 		}
@@ -299,7 +300,7 @@ public class TinySEBPlusTree implements BPlusTree{
 				return parentNode.get(i*2);
 			}
 		}
-		return parentNode.get(parentNode.get(parentNode.size()-1)); //주소를 리턴하니까 사이즈에서 1을 뺀걸 리턴하는게 맞다.
+		return parentNode.get(parentNode.size()-1); //주소를 리턴하니까 사이즈에서 1을 뺀걸 리턴하는게 맞다.
 	}
 	
 	//점검 필요
@@ -356,7 +357,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	//점검 필요
 	private List<Integer> getList(int nodeAddress) throws IOException{
-		byte[] Bytes = new byte[blocksize];
+		byte[] Bytes = new byte[inputBlock];
 		tree.seek(nodeAddress);
 		tree.read(Bytes);
 		List<Integer> tempList = ByteToList(Bytes);
@@ -371,8 +372,9 @@ public class TinySEBPlusTree implements BPlusTree{
 		for(int i=0; i<Bytes.length/4; i++) {
 			if(buffer.getInt(i*4) != -1) { //-1이 보이면 거기는 리스트의 끝이라는 뜻이다.
 				tempList.add(buffer.getInt(i*4));
+			}else {
+				break;
 			}
-			break; //break시 리턴문에 닿을 수 있는지??
 		}
 		return tempList;
 	}
@@ -408,14 +410,59 @@ public class TinySEBPlusTree implements BPlusTree{
 			treefile.createNewFile();
 			tree = new RandomAccessFile(savepath,"rw");
 		}else { //Search 모드
-			
+			tree = new RandomAccessFile(savepath, "rw"); //캐시의 역할 때문에 쓰는 것도 필요하다
+			InitSearch();
 		}
 	}
-
-	@Override
-	public int search(int key) {
-		return -1; //찾지 못하면 -1 호출
+	
+	private void InitSearch() throws IOException {
+		DataInputStream metaInput = new DataInputStream(new BufferedInputStream(new FileInputStream(metapath)));
+		int RootAddress = metaInput.readInt();
+		this.height = metaInput.readInt();
+		this.blocksize = metaInput.readInt();
+		this.inputBlock = this.blocksize + 4;
+		byte[] Bytes = new byte[inputBlock];
+		tree.seek(RootAddress);
+		tree.read(Bytes);
+		Root = ByteToList(Bytes);
+		metaInput.close();
 	}
-
+	
+	@Override
+	public int search(int key) throws IOException {
+		num = 0;
+		int nodeAddress = findAtRoot(key); //여기서 num이 1이됨
+		
+		if(height==0) { //트리에 Root밖에 없는 경우 =>임시 Test만 해당되는데 지워버릴까?
+			nodeAddress = searchAtRoot(key);
+			return nodeAddress;
+		}
+		while(num<height) { //LeafNode의 바로 윗부분 까지만 가도록 하기
+			nodeAddress = findAtParent(key, nodeAddress);
+		}
+		
+		nodeAddress = searchAtLeaf(key,nodeAddress);
+		
+		return nodeAddress; //찾지 못하면 -1 호출
+	}
+	
+	private int searchAtLeaf(int key,int nodeAddress) throws IOException {
+		List<Integer> LeafNode = getList(nodeAddress);
+		for(int i=0; i<LeafNode.size()/2; i++) {
+			if(key == LeafNode.get(i*2+1)) {
+				return LeafNode.get(i*2);
+			}
+		}
+		return -1;
+	}
+	
+	private int searchAtRoot(int key) {
+		for(int i=0; i<Root.size()/2; i++) {
+			if(key == Root.get(i*2+1)) {
+				return Root.get(i*2);
+			}
+		}
+		return -1;
+	}
 }
 
