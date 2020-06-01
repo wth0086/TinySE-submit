@@ -15,7 +15,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	List<Integer> Root = new LinkedList<>();
 	List<Integer> History = new LinkedList<>(); // Leaf노드가 꽉 차면, 어느 부모노드에다가 insert해야하는지, 그 부모노드도 다 차면 어느 부모노드에 넣어야하는지, 마지막 부모노드도 꽉 차면(History 리스트가 다비워지면) Root에 넣어주어야 한다는 뜻
 												// 0번부터가 Leaf노드와 가장 가까운 부모노드다.
-	String metapath;
+	String metapath; //1)Root의 위치, 2)height 값  3)blocksize 값
 	String savepath;
 	int blocksize;
 	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다.
@@ -26,10 +26,38 @@ public class TinySEBPlusTree implements BPlusTree{
 	int selecter[] = {0, 1}; //짝수일 때는 0을 홀수일 때는 1을 반환하도록 하는 아이
 	
 	@Override
-	public void close() { 
-		
+	public void close() throws IOException { 
+		File file = new File(metapath);
+		if(!file.exists()) { //Insert 모드
+			file.createNewFile();
+			DataOutputStream input = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(metapath)));
+			input.writeInt(count*inputBlock);
+			input.writeInt(height);
+			input.writeInt(blocksize);
+			input.close();
+			writeRoot();
+			writeRest();
+			tree.close();
+		}else { //Search 모드
+			
+		}
 	}
-
+	
+	private void writeRoot() throws IOException {
+		byte[] Bytes = ListToByte(Root);
+		tree.seek(count*inputBlock);
+		tree.write(Bytes);
+	}
+	
+	private void writeRest() throws IOException {
+		byte[] Bytes = new byte[inputBlock];
+		for(int i=0; i<LRU.size(); i++) {
+			tree.seek(LRU.get(i));
+			Bytes = ListToByte(map.get(LRU.get(i)));
+			tree.write(Bytes);
+		}
+	}
+	
 	@Override
 	public void insert(int key, int address) throws IOException { //num 증가시키는 곳이 제대로 들어가는지 확인해야한다.
 		//초기화 작업
