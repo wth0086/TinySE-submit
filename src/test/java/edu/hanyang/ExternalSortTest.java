@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import edu.hanyang.submit.TinySEExternalSort;
 
+@Ignore()
 public class ExternalSortTest {
 	@Before
 	public void init() {

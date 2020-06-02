@@ -18,8 +18,8 @@ public class TinySEBPlusTree implements BPlusTree{
 	String metapath; //1)Root의 위치, 2)height 값  3)blocksize 값
 	String savepath;
 	int blocksize;
-	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다.
-	int nblocks = 6; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
+	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다. => 여유롭게 12로 해보자
+	int nblocks = 50; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
 	int height; // 높이를 저장해주는 용도. 부모노드와 자식노드를 구분해주기 위한 용도. 또한 메타파일에 저장해주어야 하는 값이다.
 	int num; // height와 비교해주기 위한 값
 	int count; // 새로운 노드들이 RAF의  어느 위치에 저장되어야 하는지 주소값을 저장해주기 위한 용도.
@@ -123,6 +123,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	// Insert 3번을 구현한 것 이다. , 점검 필요
 	private void add(int key, int address) throws IOException {
 		int nodeAddress = findAtRoot(key); //Root에서 찾은 주소
+		History.add(nodeAddress);
 		
 		while(num<height) { //Leaf노드에 도달할 때까지 while문을 돌려라
 			nodeAddress = findAtParent(key, nodeAddress);
@@ -172,7 +173,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	//Insert 4, 5번 구현, 점검 필요
 	private void split(List<Integer> list) throws IOException {
 		List<Integer> tempList;
-		if(!History.isEmpty()) { // 참조할 부모노드가 Root노드가 아닌 경우
+		if(History.size()!=1 && History.size()!=0) { // 참조할 부모노드가 Root노드가 아닌 경우
 			tempList = subList(list,0,list.size()/2+1); //이거 제일 Leaf노드도 이렇게 쪼개어도 되나?? 확인해봐야겠는데?? 아 -666 때문에 될거같기도하고?
 			tempList.add(count*inputBlock);
 			addToCache_split(tempList,History.get(0)); //split한 리스트를 캐시에 저장해주어야 한다.
@@ -181,7 +182,7 @@ public class TinySEBPlusTree implements BPlusTree{
 			count++; //count 사용했으면 증가시켜주는거 까먹지 마
 			
 			addToParent(History.get(0), tempList.get(1), (count-1)*inputBlock); //나누어진 리스트를 나타내주기 위한 값들을 부모 노드에 저장해주어야한다.
-		}else { // 참조할 부모노드가 Root노드인 경우
+		}else if(History.size()==0 || History.size()==1){ // 참조할 부모노드가 Root노드인 경우
 			int nodeAddress = findAtRoot(list.get(1));// list 안의 어떤 키를 써도 해당 주소를 찾을 수 있기에 제일 빠른 놈으로 골랐다.
 			tempList = subList(list,0,list.size()/2+1);
 			tempList.add(count*inputBlock);
@@ -267,25 +268,35 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	//점검 필요
 	private void addToParent(int LeftChild, int ChildKey, int RightChild) throws IOException { //LeftChild-> 왼쪽에 추가되는 자식 노드의 주소값, ChildKey-> 우측 자식 노드의 첫번째 key값, RightChild->우측에 추가되는 자식 노드의 주소값
+		History.remove(0);
 		List<Integer> tempList = HitToCache(History.get(0)); //부모노드 혹시라도 캐시에 없을 경우에
+		int len = tempList.size()/2;
 		
 		if(tempList.size()<blocksize/4) { //부모노드에 충분한 여유가 있다면
-			for(int i=0; i<tempList.size()/2;i++) {
+			for(int i=0; i<len;i++) {
 				if(ChildKey<tempList.get(i*2+1)) {
 					tempList.add(i*2+1,RightChild); //이 위치에 이 순서로 추가해주는게 맞는지 생각해볼 것
 					tempList.add(i*2+1,ChildKey);
+					break;
 				}
 			}
-			
+			if(ChildKey>tempList.get(tempList.size()-2)) {
+				tempList.add(ChildKey);
+				tempList.add(RightChild);
+			}
 			History.remove(0); //부모노드를 한번 썼으므로 삭제해줄 것
 		}else { //부모노드가 꽉 찼다면
-			for(int i=0; i<tempList.size()/2;i++) {
+			for(int i=0; i<len;i++) {
 				if(ChildKey<tempList.get(i*2+1)) {
 					tempList.add(i*2+1,RightChild); //이 위치에 이 순서로 추가해주는게 맞는지 생각해볼 것
 					tempList.add(i*2+1,ChildKey);
+					break;
 				}
 			}
-			
+			if(ChildKey>tempList.get(tempList.size()-2)) {
+				tempList.add(ChildKey);
+				tempList.add(RightChild);
+			}
 			History.remove(0); //부모노드를 한번 썼으므로 삭제해줄 것
 			split(tempList); //이거 위에서 Histroy의 첫번째 주소를 삭제해주는데  tempList에 변동이 생기는지 확인해 볼것
 		}
@@ -317,9 +328,11 @@ public class TinySEBPlusTree implements BPlusTree{
 	private void addToCache(int nodeAddress) throws IOException{ //캐시에 해당하는 주소가 없다면 추가해주는 메소드
 		if(map.size()<nblocks) { //캐시에 아직 여유 공간이 있다면
 			map.put(nodeAddress, getList(nodeAddress));
+			LRU.add(0,nodeAddress);
 		}else { //캐시에 여유 공간이 없다면
 			remove();
 			map.put(nodeAddress, getList(nodeAddress));
+			LRU.add(0, nodeAddress);
 		}
 	}
 	
@@ -400,10 +413,10 @@ public class TinySEBPlusTree implements BPlusTree{
 		
 		if(blocksize%8==0) {
 			this.blocksize = blocksize;
-			inputBlock = this.blocksize + 4;
+			inputBlock = this.blocksize + 12;
 		}else {
 			this.blocksize = (blocksize/8)*8;
-			inputBlock = this.blocksize + 4;
+			inputBlock = this.blocksize + 12;
 		}
 		
 		if(!treefile.exists()) { //Insert 모드
@@ -420,7 +433,7 @@ public class TinySEBPlusTree implements BPlusTree{
 		int RootAddress = metaInput.readInt();
 		this.height = metaInput.readInt();
 		this.blocksize = metaInput.readInt();
-		this.inputBlock = this.blocksize + 4;
+		this.inputBlock = this.blocksize + 12;
 		byte[] Bytes = new byte[inputBlock];
 		tree.seek(RootAddress);
 		tree.read(Bytes);
