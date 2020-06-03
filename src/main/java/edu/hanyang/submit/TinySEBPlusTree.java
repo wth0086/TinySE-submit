@@ -19,7 +19,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	String savepath;
 	int blocksize;
 	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다. => 여유롭게 12로 해보자
-	int nblocks = 50; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
+	int nblocks = 10; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
 	int height; // 높이를 저장해주는 용도. 부모노드와 자식노드를 구분해주기 위한 용도. 또한 메타파일에 저장해주어야 하는 값이다.
 	int num; // height와 비교해주기 위한 값
 	int count; // 새로운 노드들이 RAF의  어느 위치에 저장되어야 하는지 주소값을 저장해주기 위한 용도.
@@ -166,24 +166,14 @@ public class TinySEBPlusTree implements BPlusTree{
 			}
 			
 			//나누어 주기 시작
-			split(LeafNode);
+			split_Leaf(LeafNode); //split_leaf로 따로 구현할까? 자꾸 History에 문제 생기니까?? 그리고 addToParent의 Histoy.remove를 제일 처음거를 없애는거지
 		}
 	}
 	
-	//Insert 4, 5번 구현, 점검 필요
-	private void split(List<Integer> list) throws IOException {
+	private void split_Leaf(List<Integer> list) throws IOException {
 		List<Integer> tempList;
-		if(History.size()!=1 && History.size()!=0) { // 참조할 부모노드가 Root노드가 아닌 경우
-			tempList = subList(list,0,list.size()/2+1); //이거 제일 Leaf노드도 이렇게 쪼개어도 되나?? 확인해봐야겠는데?? 아 -666 때문에 될거같기도하고?
-			tempList.add(count*inputBlock);
-			addToCache_split(tempList,History.get(0)); //split한 리스트를 캐시에 저장해주어야 한다.
-			tempList = subList(list,list.size()/2+1,list.size());
-			addToCache_split(tempList,count*inputBlock); //나누어진 리스트 중 두번째 리스트는 RAF에 새로 추가 되는 노드이기 때문에 새로운 주솟값을 받아야한다.
-			count++; //count 사용했으면 증가시켜주는거 까먹지 마
-			
-			addToParent(History.get(0), tempList.get(1), (count-1)*inputBlock); //나누어진 리스트를 나타내주기 위한 값들을 부모 노드에 저장해주어야한다.
-		}else if(History.size()==0 || History.size()==1){ // 참조할 부모노드가 Root노드인 경우
-			int nodeAddress = findAtRoot(list.get(1));// list 안의 어떤 키를 써도 해당 주소를 찾을 수 있기에 제일 빠른 놈으로 골랐다.
+		int nodeAddress = History.get(0);
+		if(History.size()>1) { //루트노드가 아닌 부모노드에게서 내려온 LeafNode 일 때 -> addToParent
 			tempList = subList(list,0,list.size()/2+1);
 			tempList.add(count*inputBlock);
 			addToCache_split(tempList,nodeAddress);
@@ -191,6 +181,44 @@ public class TinySEBPlusTree implements BPlusTree{
 			addToCache_split(tempList,count*inputBlock);
 			count++;
 			
+			History.remove(0);
+			addToParent(nodeAddress, tempList.get(1), (count-1)*inputBlock);
+		}else { //루트노드 바로 아래가 LeafNode 일 때 -> addToRoot
+			tempList = subList(list,0,list.size()/2+1);
+			tempList.add(count*inputBlock);
+			addToCache_split(tempList,nodeAddress);
+			tempList = subList(list,list.size()/2+1,list.size());
+			addToCache_split(tempList,count*inputBlock);
+			count++;
+			
+			History.remove(0);
+			addToRoot(nodeAddress, tempList.get(1), (count-1)*inputBlock);
+		}
+	}
+	
+	//Insert 4, 5번 구현, 점검 필요
+	private void split(List<Integer> list) throws IOException {
+		List<Integer> tempList;
+		int nodeAddress = History.get(0);
+		if(History.size()>1) { // 참조할 부모노드가 Root노드가 아닌 경우
+			tempList = subList(list,0,list.size()/2+1); //이거 제일 Leaf노드도 이렇게 쪼개어도 되나?? 확인해봐야겠는데?? 아 -666 때문에 될거같기도하고?
+			tempList.add(count*inputBlock);
+			addToCache_split(tempList,nodeAddress); //split한 리스트를 캐시에 저장해주어야 한다.
+			tempList = subList(list,list.size()/2+1,list.size());
+			addToCache_split(tempList,count*inputBlock); //나누어진 리스트 중 두번째 리스트는 RAF에 새로 추가 되는 노드이기 때문에 새로운 주솟값을 받아야한다.
+			count++; //count 사용했으면 증가시켜주는거 까먹지 마
+			
+			History.remove(0);
+			addToParent(nodeAddress, tempList.get(1), (count-1)*inputBlock); //나누어진 리스트를 나타내주기 위한 값들을 부모 노드에 저장해주어야한다.
+		}else{ // 참조할 부모노드가 Root노드인 경우
+			tempList = subList(list,0,list.size()/2+1);
+			tempList.add(count*inputBlock);
+			addToCache_split(tempList,nodeAddress);
+			tempList = subList(list,list.size()/2+1,list.size());
+			addToCache_split(tempList,count*inputBlock);
+			count++;
+			
+			History.remove(0);
 			addToRoot(nodeAddress, tempList.get(1), (count-1)*inputBlock);			
 		}
 	}
@@ -268,7 +296,6 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	//점검 필요
 	private void addToParent(int LeftChild, int ChildKey, int RightChild) throws IOException { //LeftChild-> 왼쪽에 추가되는 자식 노드의 주소값, ChildKey-> 우측 자식 노드의 첫번째 key값, RightChild->우측에 추가되는 자식 노드의 주소값
-		History.remove(0);
 		List<Integer> tempList = HitToCache(History.get(0)); //부모노드 혹시라도 캐시에 없을 경우에
 		int len = tempList.size()/2;
 		
@@ -284,7 +311,6 @@ public class TinySEBPlusTree implements BPlusTree{
 				tempList.add(ChildKey);
 				tempList.add(RightChild);
 			}
-			History.remove(0); //부모노드를 한번 썼으므로 삭제해줄 것
 		}else { //부모노드가 꽉 찼다면
 			for(int i=0; i<len;i++) {
 				if(ChildKey<tempList.get(i*2+1)) {
@@ -297,8 +323,7 @@ public class TinySEBPlusTree implements BPlusTree{
 				tempList.add(ChildKey);
 				tempList.add(RightChild);
 			}
-			History.remove(0); //부모노드를 한번 썼으므로 삭제해줄 것
-			split(tempList); //이거 위에서 Histroy의 첫번째 주소를 삭제해주는데  tempList에 변동이 생기는지 확인해 볼것
+			split(tempList);
 		}
 	}
 	
@@ -394,6 +419,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	//점검 필요
 	private byte[] ListToByte(List<Integer> list) { // 쓸 때는 allocate로 해야하니 Insert모드 Search모드 나누어 봐야겠는데??
+		try {
 		ByteBuffer buf = ByteBuffer.allocate(inputBlock); //여기 할당해줄때도 문제네 -> 이거 수정해야됨: Hint 32인데 36까지 입력됨 44입력 후 쪼개어져
 		for(int i=0; i<list.size(); i++) { //putInt할 때 다음 위치로 알아서 넘어가는지 확인해볼것
 			buf.putInt(list.get(i));
@@ -403,6 +429,19 @@ public class TinySEBPlusTree implements BPlusTree{
 		}
 		
 		return buf.array();
+		}catch(BufferOverflowException e) {
+			System.out.println(Root);
+			System.out.println(height);
+			System.out.println(LRU.get(0));
+			System.out.println(map.get(LRU.get(LRU.size()-2)));
+			System.out.println(map.get(LRU.get(LRU.size()-3)));
+			System.out.println(map.get(LRU.get(LRU.size()-4)));
+			System.out.println(map.get(LRU.get(LRU.size()-5)));
+			System.out.println(list);
+			System.exit(1);
+			byte[] Byte = new byte[10];
+			return Byte;
+		}
 	}
 
 	@Override
@@ -413,10 +452,10 @@ public class TinySEBPlusTree implements BPlusTree{
 		
 		if(blocksize%8==0) {
 			this.blocksize = blocksize;
-			inputBlock = this.blocksize + 12;
+			inputBlock = this.blocksize + 12; 
 		}else {
 			this.blocksize = (blocksize/8)*8;
-			inputBlock = this.blocksize + 12;
+			inputBlock = this.blocksize + 12; 
 		}
 		
 		if(!treefile.exists()) { //Insert 모드
