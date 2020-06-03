@@ -19,7 +19,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	String savepath;
 	int blocksize;
 	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다. => 여유롭게 12로 해보자
-	int nblocks = 10; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
+	int nblocks = 50; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
 	int height; // 높이를 저장해주는 용도. 부모노드와 자식노드를 구분해주기 위한 용도. 또한 메타파일에 저장해주어야 하는 값이다.
 	int num; // height와 비교해주기 위한 값
 	int count; // 새로운 노드들이 RAF의  어느 위치에 저장되어야 하는지 주소값을 저장해주기 위한 용도.
@@ -137,6 +137,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	// Insert 4번을 구현한 것 이다. , 점검 필요
 	private void addToLeaf(List<Integer> LeafNode, int key, int address) throws IOException { //map에서 갖고와서 추가해주면 자동으로 반영되는지 알아보자
+		try {
 		int len = LeafNode.size()/2;
 		
 		if(LeafNode.size()<blocksize/4) { //노드에 여유가 있다면
@@ -168,26 +169,34 @@ public class TinySEBPlusTree implements BPlusTree{
 			//나누어 주기 시작
 			split_Leaf(LeafNode); //split_leaf로 따로 구현할까? 자꾸 History에 문제 생기니까?? 그리고 addToParent의 Histoy.remove를 제일 처음거를 없애는거지
 		}
+		}catch(IndexOutOfBoundsException e) {
+			close();
+			System.out.println(Root);
+			System.out.println(height);
+			System.out.println(History);
+			System.out.println(LRU);
+			System.exit(1);
+		}
 	}
 	
 	private void split_Leaf(List<Integer> list) throws IOException {
 		List<Integer> tempList;
 		int nodeAddress = History.get(0);
 		if(History.size()>1) { //루트노드가 아닌 부모노드에게서 내려온 LeafNode 일 때 -> addToParent
-			tempList = subList(list,0,list.size()/2+1);
+			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]);
 			tempList.add(count*inputBlock);
 			addToCache_split(tempList,nodeAddress);
-			tempList = subList(list,list.size()/2+1,list.size());
+			tempList = subList(list,list.size()/2 + selecter[(list.size()/2)%2],list.size());
 			addToCache_split(tempList,count*inputBlock);
 			count++;
 			
 			History.remove(0);
 			addToParent(nodeAddress, tempList.get(1), (count-1)*inputBlock);
 		}else { //루트노드 바로 아래가 LeafNode 일 때 -> addToRoot
-			tempList = subList(list,0,list.size()/2+1);
+			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]);
 			tempList.add(count*inputBlock);
 			addToCache_split(tempList,nodeAddress);
-			tempList = subList(list,list.size()/2+1,list.size());
+			tempList = subList(list,list.size()/2 + selecter[(list.size()/2)%2],list.size());
 			addToCache_split(tempList,count*inputBlock);
 			count++;
 			
@@ -201,20 +210,20 @@ public class TinySEBPlusTree implements BPlusTree{
 		List<Integer> tempList;
 		int nodeAddress = History.get(0);
 		if(History.size()>1) { // 참조할 부모노드가 Root노드가 아닌 경우
-			tempList = subList(list,0,list.size()/2+1); //이거 제일 Leaf노드도 이렇게 쪼개어도 되나?? 확인해봐야겠는데?? 아 -666 때문에 될거같기도하고?
+			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]); //이거 제일 Leaf노드도 이렇게 쪼개어도 되나?? 확인해봐야겠는데?? 아 -666 때문에 될거같기도하고?
 			tempList.add(count*inputBlock);
 			addToCache_split(tempList,nodeAddress); //split한 리스트를 캐시에 저장해주어야 한다.
-			tempList = subList(list,list.size()/2+1,list.size());
+			tempList = subList(list,list.size()/2 + selecter[(list.size()/2)%2],list.size());
 			addToCache_split(tempList,count*inputBlock); //나누어진 리스트 중 두번째 리스트는 RAF에 새로 추가 되는 노드이기 때문에 새로운 주솟값을 받아야한다.
 			count++; //count 사용했으면 증가시켜주는거 까먹지 마
 			
 			History.remove(0);
 			addToParent(nodeAddress, tempList.get(1), (count-1)*inputBlock); //나누어진 리스트를 나타내주기 위한 값들을 부모 노드에 저장해주어야한다.
 		}else{ // 참조할 부모노드가 Root노드인 경우
-			tempList = subList(list,0,list.size()/2+1);
+			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]);
 			tempList.add(count*inputBlock);
 			addToCache_split(tempList,nodeAddress);
-			tempList = subList(list,list.size()/2+1,list.size());
+			tempList = subList(list,list.size()/2 + selecter[(list.size()/2)%2],list.size());
 			addToCache_split(tempList,count*inputBlock);
 			count++;
 			
@@ -259,13 +268,12 @@ public class TinySEBPlusTree implements BPlusTree{
 	//점검 필요
 	private void split_Root() throws IOException {
 		List<Integer> tempList;
-		
-		tempList = subList(Root, 0, Root.size()/2+1);
+		tempList = subList(Root, 0, Root.size()/2 + selecter[(Root.size()/2)%2]);
 		tempList.add((count+1)*inputBlock); //우측 노드의 첫번째 값 가져오기
 		addToCache_split(tempList, count*inputBlock); //루트를 쪼개면 아예 새로운 노드이니까
 		count++;
 		
-		tempList = subList(Root, Root.size()/2+1, Root.size());
+		tempList = subList(Root, Root.size()/2 + selecter[(Root.size()/2)%2], Root.size());
 		addToCache_split(tempList, count*inputBlock);
 		count++;
 		
@@ -308,8 +316,8 @@ public class TinySEBPlusTree implements BPlusTree{
 				}
 			}
 			if(ChildKey>tempList.get(tempList.size()-2)) {
-				tempList.add(ChildKey);
-				tempList.add(RightChild);
+				tempList.add(tempList.size()-1,ChildKey);
+				tempList.add(tempList.size()-2,RightChild);
 			}
 		}else { //부모노드가 꽉 찼다면
 			for(int i=0; i<len;i++) {
@@ -320,8 +328,8 @@ public class TinySEBPlusTree implements BPlusTree{
 				}
 			}
 			if(ChildKey>tempList.get(tempList.size()-2)) {
-				tempList.add(ChildKey);
-				tempList.add(RightChild);
+				tempList.add(tempList.size()-1,ChildKey);
+				tempList.add(tempList.size()-2,RightChild);
 			}
 			split(tempList);
 		}
