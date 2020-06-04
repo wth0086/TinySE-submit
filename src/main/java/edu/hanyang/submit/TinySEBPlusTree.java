@@ -26,7 +26,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	int selecter[] = {0, 1}; //짝수일 때는 0을 홀수일 때는 1을 반환하도록 하는 아이
 	
 	@Override
-	public void close() throws IOException { 
+	public void close() throws IOException {
 		File file = new File(metapath);
 		if(!file.exists()) { //Insert 모드
 			file.createNewFile();
@@ -88,7 +88,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break; //if문을 만족 했을 때 빠져나가라는 break문이 있어야 했다. 안그러면 중복 값이 생기더라
 				}
 			}
-			if(key>Root.get(Root.size()-1)) {
+			if(key>=Root.get(Root.size()-1)) {
 				Root.add(address);
 				Root.add(key);
 			}
@@ -130,7 +130,6 @@ public class TinySEBPlusTree implements BPlusTree{
 			History.add(0,nodeAddress); //사용해왔던 부모노드 추적 할 때 사용하게 -> 이거 Insert가 끝날때는 비워주어야 한다. -> Insert시작 할 때 비우고 시작하는걸로 했어
 			num++; //num을 여기서 증가시켜주는게 맞겠지?
 		}
-		
 		List<Integer> LeafNode = HitToCache(nodeAddress);
 		addToLeaf(LeafNode, key, address);
 	}
@@ -148,7 +147,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break;
 				}
 			}
-			if(key>LeafNode.get(LeafNode.size()-2)) {
+			if(key>=LeafNode.get(LeafNode.size()-2)) {
 				LeafNode.add(LeafNode.size()-1, key);
 				LeafNode.add(LeafNode.size()-2,address); //위에서 add를 해주어서 리스트의 길이가 하나 늘어났을 것이므로 -2해주었다.
 			}
@@ -161,7 +160,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break;
 				}
 			}
-			if(key>LeafNode.get(LeafNode.size()-2)) {
+			if(key>=LeafNode.get(LeafNode.size()-2)) {
 				LeafNode.add(LeafNode.size()-1, key);
 				LeafNode.add(LeafNode.size()-2,address); //위에서 add를 해주어서 리스트의 길이가 하나 늘어났을 것이므로 -2해주었다.
 			}
@@ -210,8 +209,7 @@ public class TinySEBPlusTree implements BPlusTree{
 		List<Integer> tempList;
 		int nodeAddress = History.get(0);
 		if(History.size()>1) { // 참조할 부모노드가 Root노드가 아닌 경우
-			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]); //이거 제일 Leaf노드도 이렇게 쪼개어도 되나?? 확인해봐야겠는데?? 아 -666 때문에 될거같기도하고?
-			tempList.add(count*inputBlock);
+			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]+1); //+1 추가해줘
 			addToCache_split(tempList,nodeAddress); //split한 리스트를 캐시에 저장해주어야 한다.
 			tempList = subList(list,list.size()/2 + selecter[(list.size()/2)%2],list.size());
 			addToCache_split(tempList,count*inputBlock); //나누어진 리스트 중 두번째 리스트는 RAF에 새로 추가 되는 노드이기 때문에 새로운 주솟값을 받아야한다.
@@ -220,8 +218,7 @@ public class TinySEBPlusTree implements BPlusTree{
 			History.remove(0);
 			addToParent(nodeAddress, tempList.get(1), (count-1)*inputBlock); //나누어진 리스트를 나타내주기 위한 값들을 부모 노드에 저장해주어야한다.
 		}else{ // 참조할 부모노드가 Root노드인 경우
-			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]);
-			tempList.add(count*inputBlock);
+			tempList = subList(list,0,list.size()/2 + selecter[(list.size()/2)%2]+1);
 			addToCache_split(tempList,nodeAddress);
 			tempList = subList(list,list.size()/2 + selecter[(list.size()/2)%2],list.size());
 			addToCache_split(tempList,count*inputBlock);
@@ -244,7 +241,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break;
 				}
 			}
-			if(key>Root.get(Root.size()-2)) {
+			if(key>=Root.get(Root.size()-2)) {
 				Root.add(key);
 				Root.add(RightChild);
 			}
@@ -256,7 +253,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break;
 				}
 			}
-			if(key>Root.get(Root.size()-2)) {
+			if(key>=Root.get(Root.size()-2)) {
 				Root.add(key);
 				Root.add(RightChild);
 			}
@@ -268,8 +265,8 @@ public class TinySEBPlusTree implements BPlusTree{
 	//점검 필요
 	private void split_Root() throws IOException {
 		List<Integer> tempList;
-		tempList = subList(Root, 0, Root.size()/2 + selecter[(Root.size()/2)%2]);
-		tempList.add((count+1)*inputBlock); //우측 노드의 첫번째 값 가져오기
+		tempList = subList(Root, 0, Root.size()/2 + selecter[(Root.size()/2)%2]+1); //+1 추가해줌
+//		tempList.add((count+1)*inputBlock); //우측 노드의 첫번째 값 가져오기
 		addToCache_split(tempList, count*inputBlock); //루트를 쪼개면 아예 새로운 노드이니까
 		count++;
 		
@@ -315,7 +312,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break;
 				}
 			}
-			if(ChildKey>tempList.get(tempList.size()-2)) {
+			if(ChildKey>=tempList.get(tempList.size()-2)) {
 				tempList.add(tempList.size()-1,ChildKey);
 				tempList.add(tempList.size()-2,RightChild);
 			}
@@ -327,7 +324,7 @@ public class TinySEBPlusTree implements BPlusTree{
 					break;
 				}
 			}
-			if(ChildKey>tempList.get(tempList.size()-2)) {
+			if(ChildKey>=tempList.get(tempList.size()-2)) {
 				tempList.add(tempList.size()-1,ChildKey);
 				tempList.add(tempList.size()-2,RightChild);
 			}
