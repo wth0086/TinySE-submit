@@ -7,7 +7,7 @@ import java.util.*;
 import edu.hanyang.indexer.BPlusTree;
 
 
-
+//중간테스트 통과
 public class TinySEBPlusTree implements BPlusTree{
 	RandomAccessFile tree;
 	Map<Integer,List<Integer>> map = new HashMap<>(); // 캐싱기법을 구현하기 위한 맵이다.
@@ -313,8 +313,8 @@ public class TinySEBPlusTree implements BPlusTree{
 				}
 			}
 			if(ChildKey>=tempList.get(tempList.size()-2)) {
-				tempList.add(tempList.size()-1,ChildKey);
-				tempList.add(tempList.size()-2,RightChild);
+				tempList.add(ChildKey);
+				tempList.add(RightChild);
 			}
 		}else { //부모노드가 꽉 찼다면
 			for(int i=0; i<len;i++) {
@@ -325,8 +325,8 @@ public class TinySEBPlusTree implements BPlusTree{
 				}
 			}
 			if(ChildKey>=tempList.get(tempList.size()-2)) {
-				tempList.add(tempList.size()-1,ChildKey);
-				tempList.add(tempList.size()-2,RightChild);
+				tempList.add(ChildKey);
+				tempList.add(RightChild);
 			}
 			split(tempList);
 		}
@@ -488,10 +488,9 @@ public class TinySEBPlusTree implements BPlusTree{
 	@Override
 	public int search(int key) throws IOException {
 		num = 0;
-		int nodeAddress = findAtRoot(key); //여기서 num이 1이됨
+		int nodeAddress = searchAtRoot(key); //여기서 num이 1이됨
 		
 		if(height==0) { //트리에 Root밖에 없는 경우 =>임시 Test만 해당되는데 지워버릴까?
-			nodeAddress = searchAtRoot(key);
 			return nodeAddress;
 		}
 		while(num<height) { //LeafNode의 바로 윗부분 까지만 가도록 하기
@@ -503,20 +502,30 @@ public class TinySEBPlusTree implements BPlusTree{
 		return nodeAddress; //찾지 못하면 -1 호출
 	}
 	
+	private int searchAtRoot(int key) {
+		for(int i=0; i<Root.size()/2; i++) {
+			if(key<Root.get(i*2+1)) {
+				num++;
+				return Root.get(i*2);
+			}
+		}
+		if(Root.size()%2==0) {
+			if(key==Root.get(Root.size()-1)) {
+				return Root.get(Root.size()-1);
+			}else {
+				return -1;
+			}
+		}else {
+			num++;
+			return Root.get(Root.size()-1);
+		}
+	}
+	
 	private int searchAtLeaf(int key,int nodeAddress) throws IOException {
 		List<Integer> LeafNode = getList(nodeAddress);
 		for(int i=0; i<LeafNode.size()/2; i++) {
 			if(key == LeafNode.get(i*2+1)) {
 				return LeafNode.get(i*2);
-			}
-		}
-		return -1;
-	}
-	
-	private int searchAtRoot(int key) {
-		for(int i=0; i<Root.size()/2; i++) {
-			if(key == Root.get(i*2+1)) {
-				return Root.get(i*2);
 			}
 		}
 		return -1;

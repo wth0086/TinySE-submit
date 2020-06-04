@@ -68,7 +68,7 @@ public class BPlusTreeTest {
 			while (in.available() > 0) {
 				int termid = in.readInt();
 				int addr = in.readInt();
-				System.out.println(termid);
+//				System.out.println(termid);
 				assertEquals(tree.search(termid), addr);
 			}
 		} catch (IOException exc) {
