@@ -7,7 +7,7 @@ import java.util.*;
 import edu.hanyang.indexer.BPlusTree;
 
 
-//중간테스트 통과
+//6월 5일
 public class TinySEBPlusTree implements BPlusTree{
 	RandomAccessFile tree;
 	Map<Integer,List<Integer>> map = new HashMap<>(); // 캐싱기법을 구현하기 위한 맵이다.
@@ -19,7 +19,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	String savepath;
 	int blocksize;
 	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다. => 여유롭게 12로 해보자
-	int nblocks = 50; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
+	int nblocks = 200; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
 	int height; // 높이를 저장해주는 용도. 부모노드와 자식노드를 구분해주기 위한 용도. 또한 메타파일에 저장해주어야 하는 값이다.
 	int num; // height와 비교해주기 위한 값
 	int count; // 새로운 노드들이 RAF의  어느 위치에 저장되어야 하는지 주소값을 저장해주기 위한 용도.
@@ -136,7 +136,6 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	// Insert 4번을 구현한 것 이다. , 점검 필요
 	private void addToLeaf(List<Integer> LeafNode, int key, int address) throws IOException { //map에서 갖고와서 추가해주면 자동으로 반영되는지 알아보자
-		try {
 		int len = LeafNode.size()/2;
 		
 		if(LeafNode.size()<blocksize/4) { //노드에 여유가 있다면
@@ -167,14 +166,6 @@ public class TinySEBPlusTree implements BPlusTree{
 			
 			//나누어 주기 시작
 			split_Leaf(LeafNode); //split_leaf로 따로 구현할까? 자꾸 History에 문제 생기니까?? 그리고 addToParent의 Histoy.remove를 제일 처음거를 없애는거지
-		}
-		}catch(IndexOutOfBoundsException e) {
-			close();
-			System.out.println(Root);
-			System.out.println(height);
-			System.out.println(History);
-			System.out.println(LRU);
-			System.exit(1);
 		}
 	}
 	
@@ -379,6 +370,27 @@ public class TinySEBPlusTree implements BPlusTree{
 		map.remove(removeObject);
 	}
 	
+	private int quickFind(List<Integer> list,int key, int start, int end) { //체크해보기
+		int index = (start+end)/2;
+		int select[] = {1,0};
+		if(end-start==2) {
+			return list.get(end-1);
+		}else if(end-start==1) { 
+			if(end%2==1) {
+				return list.get(start); //key가 리스트에서 제일 작은 경우
+			}else {
+				return list.get(end); //key가 리스트에서 제일 큰 경우
+			}
+			
+		}
+		if(list.get(index+select[index%2])<key){
+			quickFind(list,key,index+select[index%2],end);
+		}else {
+			quickFind(list,key,start,index+select[index%2]);
+		}
+		return -1; //못 찾으면
+	}
+	
 	private int findAtRoot(int key) { //Root에서 키가 들어가야 할 위치를 찾아주는 함수
 		num++; //Root에서 한 층 아래로 내려갈것이므로 값을 증가시켜준다.
 		
@@ -424,7 +436,6 @@ public class TinySEBPlusTree implements BPlusTree{
 	
 	//점검 필요
 	private byte[] ListToByte(List<Integer> list) { // 쓸 때는 allocate로 해야하니 Insert모드 Search모드 나누어 봐야겠는데??
-		try {
 		ByteBuffer buf = ByteBuffer.allocate(inputBlock); //여기 할당해줄때도 문제네 -> 이거 수정해야됨: Hint 32인데 36까지 입력됨 44입력 후 쪼개어져
 		for(int i=0; i<list.size(); i++) { //putInt할 때 다음 위치로 알아서 넘어가는지 확인해볼것
 			buf.putInt(list.get(i));
@@ -434,19 +445,6 @@ public class TinySEBPlusTree implements BPlusTree{
 		}
 		
 		return buf.array();
-		}catch(BufferOverflowException e) {
-			System.out.println(Root);
-			System.out.println(height);
-			System.out.println(LRU.get(0));
-			System.out.println(map.get(LRU.get(LRU.size()-2)));
-			System.out.println(map.get(LRU.get(LRU.size()-3)));
-			System.out.println(map.get(LRU.get(LRU.size()-4)));
-			System.out.println(map.get(LRU.get(LRU.size()-5)));
-			System.out.println(list);
-			System.exit(1);
-			byte[] Byte = new byte[10];
-			return Byte;
-		}
 	}
 
 	@Override
