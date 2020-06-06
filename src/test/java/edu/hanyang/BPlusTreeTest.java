@@ -42,7 +42,7 @@ public class BPlusTreeTest {
 		tree.open(metapath, savepath, blocksize, nblocks);
 
 		long startTime = System.currentTimeMillis();
-		try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(this.getClass().getClassLoader().getResource("stage3-500000.data").getFile())))) {
+		try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(this.getClass().getClassLoader().getResource("stage3-15000000.data").getFile())))) {
 			while (in.available() > 0) {
 				int termid = in.readInt();
 				int addr = in.readInt();
@@ -63,7 +63,7 @@ public class BPlusTreeTest {
 		tree.open(metapath, savepath, blocksize, nblocks);
 
 		startTime = System.currentTimeMillis();
-		try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(this.getClass().getClassLoader().getResource("stage3-500000.data").getFile())))) {
+		try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(this.getClass().getClassLoader().getResource("stage3-15000000.data").getFile())))) {
 			
 			while (in.available() > 0) {
 				int termid = in.readInt();

@@ -19,7 +19,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	String savepath;
 	int blocksize;
 	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다. => 여유롭게 12로 해보자
-	int nblocks = 200; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
+	int nblocks = 100; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
 	int height; // 높이를 저장해주는 용도. 부모노드와 자식노드를 구분해주기 위한 용도. 또한 메타파일에 저장해주어야 하는 값이다.
 	int num; // height와 비교해주기 위한 값
 	int count; // 새로운 노드들이 RAF의  어느 위치에 저장되어야 하는지 주소값을 저장해주기 위한 용도.
@@ -128,7 +128,6 @@ public class TinySEBPlusTree implements BPlusTree{
 		while(num<height) { //Leaf노드에 도달할 때까지 while문을 돌려라
 			nodeAddress = findAtParent(key, nodeAddress);
 			History.add(0,nodeAddress); //사용해왔던 부모노드 추적 할 때 사용하게 -> 이거 Insert가 끝날때는 비워주어야 한다. -> Insert시작 할 때 비우고 시작하는걸로 했어
-			num++; //num을 여기서 증가시켜주는게 맞겠지?
 		}
 		List<Integer> LeafNode = HitToCache(nodeAddress);
 		addToLeaf(LeafNode, key, address);
@@ -338,7 +337,8 @@ public class TinySEBPlusTree implements BPlusTree{
 	//점검 필요
 	private List<Integer> HitToCache(int nodeAddress) throws IOException { //캐시에 있는 리스트를 갖고 오는 메소드
 		if(map.get(nodeAddress)!=null) { //캐시에 주소에 해당하는 리스트가 있다면
-			
+			LRU.remove((Object)nodeAddress);
+			LRU.add(0,nodeAddress);
 			return map.get(nodeAddress);
 		}else { //캐시에 주소에 해당하는 리스트가 없다면
 			addToCache(nodeAddress);
@@ -432,14 +432,25 @@ public class TinySEBPlusTree implements BPlusTree{
 		File treefile = new File(savepath);
 		this.metapath = metapath;
 		this.savepath = savepath;
-		
-		if(blocksize%8==0) {
-			this.blocksize = blocksize;
-			inputBlock = this.blocksize + 12; 
-		}else {
-			this.blocksize = (blocksize/8)*8;
-			inputBlock = this.blocksize + 12; 
+		if(blocksize<=1024) {
+			if(blocksize%8==0) {
+				this.blocksize = blocksize;
+				inputBlock = this.blocksize + 12; 
+			}else {
+				this.blocksize = (blocksize/8)*8;
+				inputBlock = this.blocksize + 12; 
+			}
+		}else { //blocksize가 1024보다 크다면
+			blocksize=1024;
+			if(blocksize%8==0) {
+				this.blocksize = blocksize;
+				inputBlock = this.blocksize + 12; 
+			}else {
+				this.blocksize = (blocksize/8)*8;
+				inputBlock = this.blocksize + 12; 
+			}
 		}
+		
 		
 		if(!treefile.exists()) { //Insert 모드
 			treefile.createNewFile();
