@@ -7,7 +7,7 @@ import java.util.*;
 import edu.hanyang.indexer.BPlusTree;
 
 
-//최종제출물 6월 7일 -> 2차 수정 6월 8일
+//진짜진짜 최종 제출본 6월 8일
 public class TinySEBPlusTree implements BPlusTree{
 	RandomAccessFile tree;
 	Map<Integer,List<Integer>> map = new HashMap<>(); // 캐싱기법을 구현하기 위한 맵이다.
@@ -19,7 +19,7 @@ public class TinySEBPlusTree implements BPlusTree{
 	String savepath;
 	int blocksize;
 	int inputBlock; //자식 노드가 기존의 blocksize보다 4바이트 더 저장되는 현상을 위해 여기에는 4를 더해줘서 RAF에 값이 겹치는 문제가 없도록 한다. => 여유롭게 12로 해보자
-	int nblocks = 80; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
+	int nblocks = 100; // 원래는 시작 때 정해주지만, 우리는 캐싱기법을 적용하기 위해 값을 정해주도록 하자 => 테스트때문에 8로 해놓음. 최종테스트 때는 50으로 해놓을 것
 	int height; // 높이를 저장해주는 용도. 부모노드와 자식노드를 구분해주기 위한 용도. 또한 메타파일에 저장해주어야 하는 값이다.
 	int num; // height와 비교해주기 위한 값
 	int count; // 새로운 노드들이 RAF의  어느 위치에 저장되어야 하는지 주소값을 저장해주기 위한 용도.
